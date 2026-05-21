@@ -1,73 +1,78 @@
-/*
- *  @date: 2026-05-21 10:43:34  星期四
- *  @description: Copyright (cpp) 2026 by Ly_boy, All Rights Reserved.
- *  @file: demo.cpp
- */
 #include <bits/stdc++.h>
-
-#define debug freopen("in.txt", "r", stdin), freopen("out.txt", "w", stdout)
-#define endl "\n"
-#define N 105
-#define ll long long
-
 using namespace std;
 
-char mp[N][N];
-int n, m, ans;
-bool vis[N][N];
-int dir[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-struct node
-{
-    int x, y, step;
-};
+// 这里的 Q 最大 10^5，线段树数组开 4 倍空间
+const int MAXN = 100005;
+long long tree[MAXN << 2];
+int Q;
+long long M;
 
-int bfs(int sx, int sy, int ex, int ey)
+// 向上更新：父节点等于左右子节点乘积取模
+void push_up(int rt)
 {
-    memset(vis, false, sizeof(vis));
-    queue<node> q;
-    q.push({sx, sy, 0});
-    vis[sx][sy] = true;
-    while (!q.empty())
-    {
-        auto [x, y, step] = q.front();
-        q.pop();
-        if (x == ex && y == ey)
-            return step;
-        for (int i = 0; i < 4; i++)
-        {
-            int nx = x + dir[i][0], ny = y + dir[i][1];
-            if (nx >= 1 && nx <= n && ny >= 1 && ny <= m && mp[nx][ny] != '#' && !vis[nx][ny])
-            {
-                vis[nx][ny] = true;
-                q.push({nx, ny, step + 1});
-            }
-        }
-    }
-    return -1;
+    tree[rt] = (tree[rt << 1] * tree[rt << 1 | 1]) % M;
 }
 
-int sx, sy, tx1, ty1, tx2, ty2;
+// 建树：初始所有位置都是 1
+void build(int rt, int l, int r)
+{
+    if (l == r)
+    {
+        tree[rt] = 1;
+        return;
+    }
+    int mid = (l + r) >> 1;
+    build(rt << 1, l, mid);
+    build(rt << 1 | 1, mid + 1, r);
+    push_up(rt);
+}
+
+// 单点修改：将 pos 位置的值改为 val
+void update(int rt, int l, int r, int pos, int val)
+{
+    if (l == r)
+    {
+        tree[rt] = val % M;
+        return;
+    }
+    int mid = (l + r) >> 1;
+    if (pos <= mid)
+        update(rt << 1, l, mid, pos, val);
+    else
+        update(rt << 1 | 1, mid + 1, r, pos, val);
+    push_up(rt);
+}
+
+void solve()
+{
+    scanf("%d %lld", &Q, &M);
+    build(1, 1, Q);
+
+    for (int i = 1; i <= Q; i++)
+    {
+        int op;
+        long long val;
+        scanf("%d %lld", &op, &val);
+        if (op == 1)
+        {
+            // 类型 1：在当前位置 i 乘上 val
+            update(1, 1, Q, i, val);
+        }
+        else
+        {
+            // 类型 2：把第 val 次操作乘的数变回 1
+            update(1, 1, Q, (int)val, 1);
+        }
+        // 每次操作后，根节点存的就是当前所有有效乘数的积
+        printf("%lld\n", tree[1]);
+    }
+}
 
 int main()
 {
-    scanf("%d%d", &n, &m);
-    for (int i = 1; i <= n; i++)
-    {
-        for (int j = 1; j <= m; j++)
-        {
-            scanf(" %c", &mp[i][j]);
-            if (mp[i][j] == 'S')
-                sx = i, sy = j;
-            if (mp[i][j] == 'T')
-                tx1 = tx2, ty1 = ty2, tx2 = i, ty2 = j;
-        }
-    }
-    int step1 = bfs(sx, sy, tx1, ty1);
-    int step2 = bfs(sx, sy, tx2, ty2);
-    int step3 = bfs(tx1, ty1, tx2, ty2);
-    if (step1 != -1 && step2 != -1 && step3 != -1)
-        printf("%d", step1 + step2 + step3);
-    else
-        printf("-1");
+    int T;
+    scanf("%d", &T);
+    while (T--)
+        solve();
     return 0;
 }

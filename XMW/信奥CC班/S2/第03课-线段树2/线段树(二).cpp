@@ -4,9 +4,7 @@
  *  @file: 线段树(二).cpp
  */
 #include <bits/stdc++.h>
-#define lt k << 1
-#define rt k << 1 | 1
-#define N 100005
+#define N 500005
 #define ll long long
 
 using namespace std;
@@ -15,109 +13,126 @@ struct node
     int l, r;
     ll sum, add_lazy, mul_lazy; // sum:区间和,add_lazy:区间加法懒标记,mul_lazy:区间乘法懒标记
 } tree[N << 2];
-int n, q, m, a[N];
+int n, m, mod, a[N];
 
-void build(int k, int l, int r)
+void build(int pos, int l, int r)
 {
-    tree[k] = {l, r, 0, 0, 1}; // 初始化乘法懒标记为1
+    tree[pos].l = l;
+    tree[pos].r = r;
+    tree[pos].mul_lazy = 1;
+
     if (l == r)
     {
-        tree[k].sum = a[l] % m;
+        tree[pos].sum = a[l] % mod;
         return;
     }
+
     int mid = (l + r) >> 1;
-    build(lt, l, mid);
-    build(rt, mid + 1, r);
-    tree[k].sum = (tree[lt].sum + tree[rt].sum) % m;
+    build(pos << 1, l, mid);
+    build(pos << 1 | 1, mid + 1, r);
+    tree[pos].sum = (tree[pos << 1].sum + tree[pos << 1 | 1].sum) % mod;
+    return;
 }
 
-void push_down(int k)
+void push_down(int pos)
 {
-    auto &p = tree[k], &lc = tree[lt], &rc = tree[rt];
-    // 1.先处理左孩子
-    lc.sum = (lc.sum * p.mul_lazy + (lc.r - lc.l + 1) * p.add_lazy) % m;
-    lc.mul_lazy = (lc.mul_lazy * p.mul_lazy) % m;
-    lc.add_lazy = (lc.add_lazy * p.mul_lazy + p.add_lazy) % m;
-    // 2.再处理右孩子
-    rc.sum = (rc.sum * p.mul_lazy + (rc.r - rc.l + 1) * p.add_lazy) % m;
-    rc.mul_lazy = (rc.mul_lazy * p.mul_lazy) % m;
-    rc.add_lazy = (rc.add_lazy * p.mul_lazy + p.add_lazy) % m;
-    // 3.清空当前节点的懒标记
-    p.mul_lazy = 1;
-    p.add_lazy = 0;
+    tree[pos << 1].sum = (tree[pos << 1].sum * tree[pos].mul_lazy + tree[pos].add_lazy * (tree[pos << 1].r - tree[pos << 1].l + 1)) % mod;
+    tree[pos << 1 | 1].sum = (tree[pos << 1 | 1].sum * tree[pos].mul_lazy + tree[pos].add_lazy * (tree[pos << 1 | 1].r - tree[pos << 1 | 1].l + 1)) % mod;
+
+    tree[pos << 1].mul_lazy = (tree[pos << 1].mul_lazy * tree[pos].mul_lazy) % mod;
+    tree[pos << 1 | 1].mul_lazy = (tree[pos << 1 | 1].mul_lazy * tree[pos].mul_lazy) % mod;
+
+    tree[pos << 1].add_lazy = (tree[pos << 1].add_lazy * tree[pos].mul_lazy + tree[pos].add_lazy) % mod;
+    tree[pos << 1 | 1].add_lazy = (tree[pos << 1 | 1].add_lazy * tree[pos].mul_lazy + tree[pos].add_lazy) % mod;
+
+    tree[pos].add_lazy = 0;
+    tree[pos].mul_lazy = 1;
+    return;
 }
 
-void update_mul(int k, int l, int r, int v)
+void update_mul(int pos, int x, int y, int k) // 区间乘法
 {
-    if (tree[k].l >= l && tree[k].r <= r)
+    if (x <= tree[pos].l && tree[pos].r <= y)
     {
-        tree[k].sum = (tree[k].sum * v) % m;
-        tree[k].mul_lazy = (tree[k].mul_lazy * v) % m;
-        tree[k].add_lazy = (tree[k].add_lazy * v) % m;
+        tree[pos].add_lazy = (tree[pos].add_lazy * k) % mod;
+        tree[pos].mul_lazy = (tree[pos].mul_lazy * k) % mod;
+        tree[pos].sum = (tree[pos].sum * k) % mod;
         return;
     }
-    push_down(k);
-    int mid = (tree[k].l + tree[k].r) >> 1;
-    if (l <= mid)
-        update_mul(lt, l, r, v);
-    if (r > mid)
-        update_mul(rt, l, r, v);
-    tree[k].sum = (tree[lt].sum + tree[rt].sum) % m; // 更新当前节点的区间和
+
+    push_down(pos);
+    int mid = (tree[pos].l + tree[pos].r) >> 1;
+    if (x <= mid)
+        update_mul(pos << 1, x, y, k);
+    if (y > mid)
+        update_mul(pos << 1 | 1, x, y, k);
+    tree[pos].sum = (tree[pos << 1].sum + tree[pos << 1 | 1].sum) % mod; // 更新当前节点的区间和
+    return;
 }
 
-void update_add(int k, int l, int r, int v)
+void update_add(int pos, int x, int y, int k)
 {
-    if (tree[k].l >= l && tree[k].r <= r)
+    if (x <= tree[pos].l && tree[pos].r <= y)
     {
-        tree[k].sum = (tree[k].sum + (tree[k].r - tree[k].l + 1) * v) % m;
-        tree[k].add_lazy = (tree[k].add_lazy + v) % m;
+        tree[pos].add_lazy = (tree[pos].add_lazy + k) % mod;
+        tree[pos].sum = (tree[pos].sum + k * (tree[pos].r - tree[pos].l + 1)) % mod;
         return;
     }
-    push_down(k);
-    int mid = (tree[k].l + tree[k].r) >> 1;
-    if (l <= mid)
-        update_add(lt, l, r, v);
-    if (r > mid)
-        update_add(rt, l, r, v);
-    tree[k].sum = (tree[lt].sum + tree[rt].sum) % m; // 更新当前节点的区间和
+
+    push_down(pos);
+    int mid = (tree[pos].l + tree[pos].r) >> 1;
+    if (x <= mid)
+        update_add(pos << 1, x, y, k);
+    if (y > mid)
+        update_add(pos << 1 | 1, x, y, k);
+    tree[pos].sum = (tree[pos << 1].sum + tree[pos << 1 | 1].sum) % mod; // 更新当前节点的区间和
+    return;
 }
 
-ll query(int k, int l, int r)
+ll query(int pos, int x, int y)
 {
-    if (tree[k].l >= l && tree[k].r <= r)
-        return tree[k].sum;
-    push_down(k);
-    int mid = (tree[k].l + tree[k].r) >> 1;
-    ll res = 0;
-    if (l <= mid)
-        res += query(lt, l, r);
-    if (r > mid)
-        res += query(rt, l, r);
-    return res % m;
+    if (x <= tree[pos].l && tree[pos].r <= y)
+    {
+        return tree[pos].sum;
+    }
+
+    push_down(pos);
+    ll val = 0;
+    int mid = (tree[pos].l + tree[pos].r) >> 1;
+    if (x <= mid)
+        val = (val + query(pos << 1, x, y)) % mod;
+    if (y > mid)
+        val = (val + query(pos << 1 | 1, x, y)) % mod;
+    return val;
 }
 
 int main()
 {
-    scanf("%d%d%d", &n, &q, &m);
+    scanf("%d%d%d", &n, &m, &mod);
+
     for (int i = 1; i <= n; i++)
         scanf("%d", &a[i]);
     build(1, 1, n);
-    while (q--)
+    for (int i = 1; i <= m; i++)
     {
-        int opt, l, r, v;
-        scanf("%d%d%d", &opt, &l, &r);
+        int opt, x, y;
+        scanf("%d%d%d", &opt, &x, &y);
         if (opt == 1)
         {
-            scanf("%d", &v);
-            update_mul(1, l, r, v);
+            int k;
+            scanf("%d", &k);
+            update_mul(1, x, y, k);
         }
-        else if (opt == 2)
+        if (opt == 2)
         {
-            scanf("%d", &v);
-            update_add(1, l, r, v);
+            int k;
+            scanf("%d", &k);
+            update_add(1, x, y, k);
         }
-        else
-            printf("%lld\n", query(1, l, r));
+        if (opt == 3)
+        {
+            printf("%lld\n", (query(1, x, y) % mod + mod) % mod);
+        }
     }
     return 0;
 }
