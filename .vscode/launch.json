@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "C++: clang 调试 (C++23)",
+            "type": "lldb", // 替换为macOS支持的lldb类型
+            "request": "launch",
+            "program": "${fileDirname}/${fileBasenameNoExtension}",
+            "args": [],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "C/C++: clang build active file (C++23)"
+        }
+    ]
+}

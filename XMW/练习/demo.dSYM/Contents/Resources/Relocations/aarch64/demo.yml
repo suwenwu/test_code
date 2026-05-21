@@ -1,0 +1,5 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     "/Users/s/Documents/workspace/vscode/XMW/练习/demo"
+relocations:     []
+...
