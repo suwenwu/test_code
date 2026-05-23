@@ -39,11 +39,9 @@ void kruskal()
         {
             fa[fu] = fv;
             cnt++;
+            ans = max(ans, w);
             if (cnt == n - 1)
-            {
-                ans = w;
                 break;
-            }
         }
     }
     printf("%d\n", ans);
