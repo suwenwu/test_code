@@ -17,20 +17,10 @@ int main()
         a[s[i] - 'a']++;
     for (int i = 0; i < t.size(); i++)
         b[t[i] - 'a']++;
+    sort(a, a + 26);
+    sort(b, b + 26);
     for (int i = 0; i < 26; i++)
-    {
-        if (a[i])
-            for (int j = 0; j < 26; j++)
-            {
-                if (a[i] == b[j])
-                {
-                    a[i] = b[j] = 0;
-                    break;
-                }
-            }
-    }
-    for (int i = 0; i < 26; i++)
-        if (a[i])
+        if (a[i] != b[i])
         {
             cout << "No\n";
             return 0;
